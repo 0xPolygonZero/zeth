@@ -14,17 +14,17 @@ alloy-rlp = "0.3.4"
 clap = "4"
 jsonrpsee = "0.24"
 reth = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
-reth-evm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-revm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-exex = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-node-api = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-node-core = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-node-ethereum = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-primitives = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-provider = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-rpc = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-tracing = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-reth-trie = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
+reth-evm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-revm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-exex = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-node-api = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-node-core = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-node-ethereum = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-primitives = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-provider = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-rpc = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-tracing = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
+reth-trie = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
 
 revm = { git = "https://github.com/fractal-zkp/revm.git", branch = "zeth", features = [
     "std",
@@ -46,4 +46,7 @@ thiserror = "1.0"
 
 tracing = "0.1.0"
 
-sqlx = { version = "0.7", features = [ "runtime-tokio", "sqlite", "postgres" ] }
+sqlx = { version = "0.7", features = ["runtime-tokio", "sqlite", "postgres"] }
+
+[workspace]
+members = []
