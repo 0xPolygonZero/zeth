@@ -1,10 +1,21 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
+data=data.ignoreme
+rm --force --recursive -- "$data"
+
 db=db.ignoreme
 rm --force -- "$db"
 touch -- "$db"
-cargo run -- node --dev --dev.block-max-transactions=1 --http.api all --zeth.db-path="$db" &
+
+cargo build
+cargo run -- node \
+    --dev \
+    --dev.block-max-transactions=1 \
+    --http.api all \
+    --zeth.db-path="$db" \
+    --datadir="$data" \
+    &
 node_pid=$!
 
 acct01=0x14dC79964da2C08b23698B3D3cc7Ca32193d9955
@@ -22,6 +33,9 @@ cast wallet import \
     --keystore-dir="$keystore_dir" \
     --mnemonic="$mnemonic" \
     --unsafe-password=''
+
+: wait for RPC to come up
+until cast balance "$acct01"; do sleep 1; done
 
 cast balance "$acct01"
 cast balance "$acct02"
