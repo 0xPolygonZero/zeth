@@ -67,6 +67,10 @@ impl<Node: FullNodeComponents> ZeroTracerExEx<Node> {
         self.db
             .commit_block_trace(block_hash, block_number, block_trace)
             .await?;
+        info!(
+            "Finished processing block {} - {}",
+            block_number, block_hash
+        );
         Ok(())
     }
 
