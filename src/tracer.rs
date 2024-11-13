@@ -1,24 +1,27 @@
+use primitive_types::H256;
+use alloy::primitives::{keccak256, B256, U256};
+use alloy_compat::Compat;
 use alloy_rlp::{BufMut, Encodable};
-use compat::Compat;
 use eyre::Result;
 use mpt_trie::builder::PartialTrieBuilder;
 use reth_exex::ExExContext;
 use reth_node_api::FullNodeComponents;
 use reth_primitives::{
-    keccak256, Receipt, SealedBlockWithSenders, StorageKey, TransactionSigned, B256,
+    Receipt, SealedBlockWithSenders, StorageKey, TransactionSigned,
 };
 use reth_provider::{StateProvider, StateProviderFactory};
 use reth_revm::primitives::state::EvmState;
 use reth_trie::StorageMultiProof;
 use revm::{
     db::ExecutionTrace,
-    primitives::{Account, Address, U256},
+    primitives::{Account, Address},
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, BTreeSet, BTreeMap};
 use trace_decoder::{
     BlockTrace, BlockTraceTriePreImages, ContractCodeUsage, SeparateStorageTriesPreImage,
     SeparateTriePreImage, SeparateTriePreImages, TxnInfo, TxnMeta, TxnTrace,
 };
+
 
 pub(crate) fn trace_block<Node: FullNodeComponents>(
     ctx: &mut ExExContext<Node>,
@@ -28,7 +31,7 @@ pub(crate) fn trace_block<Node: FullNodeComponents>(
     tx_traces: Vec<HashMap<Address, Account>>,
 ) -> Result<BlockTrace> {
     let db = configure_db(ctx, &block);
-    let mut code_db = HashMap::new();
+    let mut code_db = BTreeSet::new();
     let mut txn_infos = vec![];
     let mut cum_gas = 0;
 
@@ -51,7 +54,7 @@ pub(crate) fn trace_block<Node: FullNodeComponents>(
 
     Ok(BlockTrace {
         trie_pre_images,
-        code_db: Some(code_db),
+        code_db,
         txn_info: txn_infos,
     })
 }
@@ -68,7 +71,7 @@ fn trace_transaction(
     tx: &TransactionSigned,
     receipt: Receipt,
     state: &EvmState,
-    code_db: &mut HashMap<primitive_types::H256, Vec<u8>>,
+    code_db: &mut BTreeSet<Vec<u8>>,
     cum_gas: &mut u64,
 ) -> TxnInfo {
     let meta = TxnMeta {
@@ -87,34 +90,33 @@ fn trace_transaction(
     let traces = state
         .iter()
         .map(|(address, state)| {
-            let mut storage_read = vec![];
-            let mut storage_written: HashMap<primitive_types::H256, _> = HashMap::new();
+            let mut storage_read: BTreeSet<B256> = BTreeSet::new();
+            let mut storage_written: BTreeMap<B256, _> = BTreeMap::new();
 
             for (key, value) in state.storage.clone().into_iter() {
                 match value.is_changed() {
                     true => {
                         storage_written.insert(
-                            Into::<B256>::into(key).compat(),
+                            key.into(),
                             value.present_value.compat(),
                         );
                     }
                     false => {
-                        storage_read.push(Into::<B256>::into(key).compat());
+                        storage_read.insert(key.into());
                     }
                 }
             }
 
             let code_usage =
-                match state.info.is_empty_code_hash() || state.info.code_hash() == B256::ZERO {
+                match state.info.is_empty_code_hash() || state.info.code_hash().eq(&reth_primitives::B256::ZERO) {
                     true => None,
                     false => state.info.code.clone().map(|code| {
                         code_db.insert(
-                            state.info.code_hash.compat(),
                             code.original_bytes().to_vec(),
                         );
                         match state.is_created() {
                             true => ContractCodeUsage::Write(code.original_bytes().to_vec()),
-                            false => ContractCodeUsage::Read(state.info.code_hash.compat()),
+                            false => ContractCodeUsage::Read(keccak256(state.info.code_hash).compat()),
                         }
                     }),
                 };
@@ -122,13 +124,13 @@ fn trace_transaction(
             let trace = TxnTrace {
                 balance: Some(state.info.balance.compat()).filter(|_| state.is_touched()),
                 nonce: Some(state.info.nonce.into()).filter(|_| state.is_touched()),
-                storage_read: Some(storage_read).filter(|x| !x.is_empty()),
-                storage_written: Some(storage_written).filter(|x| !x.is_empty()),
+                storage_read: storage_read.into_iter().map(Compat::compat).collect(),
+                storage_written: storage_written.into_iter().map(|(k, v)| (k.compat(), v)).collect(),
                 code_usage,
-                self_destructed: Some(state.is_selfdestructed()).filter(|x| *x),
+                self_destructed: state.is_selfdestructed(),
             };
 
-            ((*address).compat(), trace)
+            (compat::Compat::compat (*address), trace)
         })
         .collect();
 
@@ -149,7 +151,7 @@ fn state_witness(
 
     // build the account trie witness
     let mut state_trie_builder =
-        PartialTrieBuilder::new(state_witness.root.compat(), Default::default());
+        PartialTrieBuilder::new(keccak256(state_witness.root).compat(), Default::default());
     state_trie_builder.insert_proof(
         state_witness
             .account_subtree
@@ -159,15 +161,15 @@ fn state_witness(
     );
 
     // build the storage trie witnesses
-    let mut storage_witnesses: HashMap<primitive_types::H256, SeparateTriePreImage> = state_witness
+    let mut storage_witnesses: HashMap<H256, SeparateTriePreImage> = state_witness
         .storages
         .into_iter()
         .map(|(hashed_addr, StorageMultiProof { root, subtree })| {
             let mut storage_trie_builder =
-                PartialTrieBuilder::new(root.compat(), Default::default());
+                PartialTrieBuilder::new(keccak256(root).compat(), Default::default());
             storage_trie_builder.insert_proof(subtree.into_values().map(Into::into).collect());
             (
-                hashed_addr.compat(),
+                keccak256(hashed_addr).compat(),
                 SeparateTriePreImage::Direct(storage_trie_builder.build()),
             )
         })
