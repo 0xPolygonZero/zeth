@@ -7,12 +7,13 @@ edition = "2021"
 name = "zeth"
 path = "src/main.rs"
 
-
 [dependencies]
 async-trait = "0.1.81"
 alloy-rlp = "0.3.4"
+alloy-compat = "0.1.1"
 clap = "4"
 jsonrpsee = "0.24"
+compat = { git = "https://github.com/fractal-zkp/zk_evm.git", branch = "zeth" }
 reth = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth" }
 reth-evm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
 reth-revm = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
@@ -25,7 +26,6 @@ reth-provider = { git = "https://github.com/fractal-zkp/reth.git", branch = "zet
 reth-rpc = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
 reth-tracing = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
 reth-trie = { git = "https://github.com/fractal-zkp/reth.git", branch = "zeth"  }
-
 revm = { git = "https://github.com/fractal-zkp/revm.git", branch = "zeth", features = [
     "std",
     "secp256k1",
@@ -36,14 +36,15 @@ eyre = "0.6"
 tokio = { version = "1.21", default-features = false }
 futures = "0.3"
 
-compat = { git = "https://github.com/fractal-zkp/zk_evm.git", branch = "zeth" }
-trace_decoder = { git = "https://github.com/fractal-zkp/zk_evm.git", branch = "zeth" }
-mpt_trie = { git = "https://github.com/fractal-zkp/zk_evm.git", branch = "zeth" }
-
+trace_decoder = { git = "https://github.com/0xPolygonZero/zk_evm.git" }
+mpt_trie = { git = "https://github.com/0xPolygonZero/zk_evm.git" }
 primitive-types = { version = "0.12.2", package = "primitive-types" }
+
 serde_json = "1.0.94"
 thiserror = "1.0"
 
 tracing = "0.1.0"
 
 sqlx = { version = "0.7", features = [ "runtime-tokio", "sqlite", "postgres" ] }
+
+alloy = { version = '0.3.0' }
